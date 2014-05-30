@@ -65,7 +65,7 @@ private int numRow, numCol;
 		}
 	}
 	
-	public Location[][] Self() {
+	public Location[][] self() {
 		return self;
 	}
 	
@@ -75,6 +75,11 @@ private int numRow, numCol;
 	
 	public int getNumCols() {
 		return numCol;
+	}
+
+	public void dig(int[] xy) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 	
