@@ -78,8 +78,53 @@ private int numRow, numCol;
 	}
 
 	public void dig(int[] xy) {
-		// TODO Auto-generated method stub
-		
+		Location loc = self[xy[0]][xy[1]];
+		if(loc.isMined())
+		{
+			for(Location[] L:self)
+				for(Location l : L)
+					if(l.isMined())
+						l.click();
+			System.out.println("Heyo! You hit a mine! Haha, you're dead!");
+			return;
+		}
+		else if(!loc.isClicked())
+		{
+			if(loc.getMines()>0)
+			{
+				System.out.println("Heyo! It should stop here!");
+				loc.click();
+				return;
+			}
+			else
+			{
+				System.out.println("Heyo! It should keep going!");
+				loc.click();
+				int i=loc.getCoords()[0]-1;
+				int i1=loc.getCoords()[0]+1;
+				int j=loc.getCoords()[1]-1;
+				int j1=loc.getCoords()[1]+1;
+				if(i<0)
+					i++;
+				if(i1>=numRow)
+					i1--;
+				if(j<0)
+					j++;
+				if(j1>=numCol)
+					j1--;
+				//search for mines		
+				for(int q=i;q<=i1;q++)
+				{
+					for(int r=j;r<=j1;r++)
+					{
+						if(!self[q][r].isClicked())
+							dig(new int[] {q,r});
+					}
+				}
+			}	
+		}
+		else
+			return;
 	}
 	
 	
