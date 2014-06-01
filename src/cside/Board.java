@@ -85,20 +85,17 @@ private int numRow, numCol;
 				for(Location l : L)
 					if(l.isMined())
 						l.click();
-			System.out.println("Heyo! You hit a mine! Haha, you're dead!");
 			return;
 		}
 		else if(!loc.isClicked())
 		{
 			if(loc.getMines()>0)
 			{
-				System.out.println("Heyo! It should stop here!");
 				loc.click();
 				return;
 			}
 			else
 			{
-				System.out.println("Heyo! It should keep going!");
 				loc.click();
 				int i=loc.getCoords()[0]-1;
 				int i1=loc.getCoords()[0]+1;

@@ -15,25 +15,32 @@ import javax.swing.*;
 public class GUI_main implements ActionListener {
 	//General variables
 	private final int tileside=21;
+	
 	//Graphics objects
 	private JFrame frame;
 	private JPanel menu,data,field;
+	
 	//private JLabel mines, time;
 	private GridLayout minefield;
 	private ArrayList<CoordButton> tiles = new ArrayList<CoordButton>();
+	
 	//Game objects
 	private Board board;
+	
 	public GUI_main(Board dmz) {
 		board=dmz;
 		//initialize the frame
 		frame=new JFrame("Minesweeper by Andrew Hild");
 		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		//frame.setResizable(false);
+		frame.setPreferredSize(new Dimension(tileside*board.getNumRows()+10, tileside*board.getNumCols()+90));
+		frame.setResizable(false);
+		
 		//initialize the mine field
 		minefield=new GridLayout(board.getNumRows(),board.getNumCols());
 		field=new JPanel();
 		field.setPreferredSize(new Dimension(tileside*board.getNumRows(), tileside*board.getNumCols()));
 		field.setLayout(minefield);
+		
 		//Initialize the mine buttons themselves
 		int r=0;
 		int c=0;
@@ -56,7 +63,7 @@ public class GUI_main implements ActionListener {
 		data=new JPanel();
 		data.add(new JLabel("Time elapsed and mines remaining data to go here"));
 		
-		
+		//Pack the frame
 		frame.getContentPane().add(menu, BorderLayout.PAGE_START);
 		frame.getContentPane().add(data, BorderLayout.CENTER);
 		frame.getContentPane().add(field, BorderLayout.PAGE_END);
@@ -73,9 +80,7 @@ public class GUI_main implements ActionListener {
 		if(source instanceof CoordButton)
 		{
 			int[] xy=((CoordButton)source).getXY();
-			//board.self()[xy[0]][xy[1]].click();
 			board.dig(xy);
-			//JOptionPane.showMessageDialog(frame, ""+xy[0]+","+xy[1], "You clicked", JOptionPane.INFORMATION_MESSAGE);
 			update();
 		}
 		
@@ -102,7 +107,7 @@ public class GUI_main implements ActionListener {
 				}
 
 		}
-		field.validate();
+		//field.validate();
 	
 	}
 
