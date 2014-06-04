@@ -1,15 +1,14 @@
 package pside;
-
 import cside.Board;
 import cside.CoordButton;
-import cside.Location;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
-
 import javax.swing.*;
 
 public class GUI_main implements ActionListener {
@@ -50,9 +49,28 @@ public class GUI_main implements ActionListener {
 				r++;
 				c=0;
 			}
-			CoordButton j = new CoordButton(new ImageIcon("src/pside/tile.png"),new int[] {r,c});
-			j.addActionListener(this);
-			tiles.add(j);
+			CoordButton b = new CoordButton(new ImageIcon("src/pside/tile.png"),new int[] {r,c});
+			b.addMouseListener(new MouseAdapter() {
+				public void mouseClicked(MouseEvent e) {
+					//System.out.println("You used mouse button "+e.getButton());
+					if(e.getComponent() instanceof CoordButton)
+					{
+						Object source=e.getComponent();
+						int[] xy=((CoordButton)(source)).getXY();
+						if(e.getButton()==3)
+						{
+							board.self()[xy[0]][xy[1]].flag();
+							update();
+						}
+						else
+						{
+							board.dig(xy);
+							update();
+						}		
+					}
+				}
+			});
+			tiles.add(b);
 			c++;
 		}
 		for(CoordButton button:tiles) {
@@ -76,17 +94,11 @@ public class GUI_main implements ActionListener {
 
 	public void actionPerformed(ActionEvent event) {
 		Object source = event.getSource();
-		
-		if(source instanceof CoordButton)
-		{
-			int[] xy=((CoordButton)source).getXY();
-			board.dig(xy);
-			update();
-		}
+		System.out.println(source.hashCode());
 		
 	}
 	
-	private void update() {
+	public void update() {
 		for(CoordButton c:tiles)
 		{
 			int[] xy=c.getXY();
@@ -105,9 +117,12 @@ public class GUI_main implements ActionListener {
 					ImageIcon i= new ImageIcon("src/pside/tileclicked.png");
 					c.setIcon(i);
 				}
-
+			else if(board.self()[xy[0]][xy[1]].isFlagged())
+			{
+				ImageIcon i= new ImageIcon("src/pside/tileflag.png");
+				c.setIcon(i);
+			}
 		}
-		//field.validate();
 	
 	}
 

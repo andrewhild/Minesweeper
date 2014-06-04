@@ -28,8 +28,8 @@ public boolean isFlagged() {
 	return isFlagged;
 }
 
-public void setFlag() {
-	isFlagged = true;
+public void flag() {
+	isFlagged = !isFlagged;
 }
 
 public boolean isClicked() {
