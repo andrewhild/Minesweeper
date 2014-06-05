@@ -1,6 +1,8 @@
 package pside;
 import cside.Board;
 import cside.CoordButton;
+import cside.Location;
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
@@ -18,13 +20,15 @@ public class GUI_main implements ActionListener {
 	//Graphics objects
 	private JFrame frame;
 	private JPanel menu,data,field;
-	
-	//private JLabel mines, time;
+	private JLabel mines, time;
+	private int seconds=0;
 	private GridLayout minefield;
 	private ArrayList<CoordButton> tiles = new ArrayList<CoordButton>();
 	
 	//Game objects
 	private Board board;
+	private Timer timer;
+	private Object eSource;
 	
 	public GUI_main(Board dmz) {
 		board=dmz;
@@ -56,30 +60,41 @@ public class GUI_main implements ActionListener {
 					if(e.getComponent() instanceof CoordButton)
 					{
 						Object source=e.getComponent();
-						int[] xy=((CoordButton)(source)).getXY();
-						if(e.getButton()==3)
+						if(((CoordButton)(source)).isEnabled())
 						{
-							board.self()[xy[0]][xy[1]].flag();
-							update();
+							int[] xy=((CoordButton)(source)).getXY();
+							if(e.getButton()==3)
+							{
+								board.self()[xy[0]][xy[1]].flag();
+								update();
+							}
+							else
+							{
+								board.dig(xy);
+								update();
+							}
 						}
-						else
-						{
-							board.dig(xy);
-							update();
-						}		
 					}
 				}
 			});
+			b.addActionListener(this);
 			tiles.add(b);
 			c++;
 		}
 		for(CoordButton button:tiles) {
 			field.add(button);
 		}
+		
+		//Initialize game state informing objects
 		menu=new JPanel();
 		menu.add(new JLabel("Menu to go here"));
 		data=new JPanel();
-		data.add(new JLabel("Time elapsed and mines remaining data to go here"));
+		mines=new JLabel("Mines:\n"+board.getNumMines());
+		time=new JLabel("Time:\n"+seconds);
+		data.add(time, BoxLayout.X_AXIS);
+		data.add(mines, BoxLayout.Y_AXIS);
+		//data.add(new JLabel("Time elapsed and mines remaining data to go here"));
+		timer=new Timer(1000,this);
 		
 		//Pack the frame
 		frame.getContentPane().add(menu, BorderLayout.PAGE_START);
@@ -94,36 +109,88 @@ public class GUI_main implements ActionListener {
 
 	public void actionPerformed(ActionEvent event) {
 		Object source = event.getSource();
-		System.out.println(source.hashCode());
-		
+		if(source instanceof CoordButton)
+		{
+			if(seconds==0)
+				timer.start();
+			//record the last button pressed
+			eSource=source;
+		}
+		else if(source==timer)
+		{
+			seconds++;
+			time.setText("Time elapsed:\n"+seconds);
+			//frame.validate();
+		}
 	}
 	
 	public void update() {
-		for(CoordButton c:tiles)
+		int won=board.isWon();
+		if(won==2)
 		{
-			int[] xy=c.getXY();
-			if(board.self()[xy[0]][xy[1]].isClicked())
-				if(board.self()[xy[0]][xy[1]].isMined()){
-					ImageIcon i= new ImageIcon("src/pside/tilemine.png");
-					c.setIcon(i);
-				}
-
-				else if(board.self()[xy[0]][xy[1]].getMines()>0){
-					ImageIcon i = new ImageIcon("src/pside/tile"+board.self()[xy[0]][xy[1]].getMines()+".png");
-					c.setIcon(i);
-				}
-
-				else {
-					ImageIcon i= new ImageIcon("src/pside/tileclicked.png");
-					c.setIcon(i);
-				}
-			else if(board.self()[xy[0]][xy[1]].isFlagged())
+			for(CoordButton c:tiles)
 			{
-				ImageIcon i= new ImageIcon("src/pside/tileflag.png");
-				c.setIcon(i);
-			}
-		}
-	
-	}
+				int[] xy=c.getXY();
+				if(board.self()[xy[0]][xy[1]].isClicked())
+					if(board.self()[xy[0]][xy[1]].isMined()){
+						if(c==eSource)
+							c.setIcon(new ImageIcon("src/pside/tileexplode.png"));
+						else
+						{
+							ImageIcon i= new ImageIcon("src/pside/tilemine.png");
+							c.setIcon(i);
+						}
+					}
 
+					else if(board.self()[xy[0]][xy[1]].getMines()>0){
+						ImageIcon i = new ImageIcon("src/pside/tile"+board.self()[xy[0]][xy[1]].getMines()+".png");
+						c.setIcon(i);
+					}
+
+					else {
+						ImageIcon i= new ImageIcon("src/pside/tileclicked.png");
+						c.setIcon(i);
+					}
+			
+				else if(board.self()[xy[0]][xy[1]].isFlagged())
+				{
+					ImageIcon i= new ImageIcon("src/pside/tileflag.png");
+					c.setIcon(i);
+				}
+			}
+			mines.setText("Remaining mines:\n"+(board.getNumMines()-board.flaggedLocs().size()));
+		}
+		else if(won==0)
+		{
+			timer.stop();
+			for(CoordButton c:tiles)
+			{
+				int[] xy=c.getXY();
+				Location L=board.self()[xy[0]][xy[1]];
+				if(L.isFlagged()&&!L.isMined())
+					c.setIcon(new ImageIcon("src/pside/tilebadflag.png"));
+				if(L.isMined())
+					c.setIcon(new ImageIcon("src/pside/tilemine.png"));
+				if(c==eSource)
+					c.setIcon(new ImageIcon("src/pside/tileexplode.png"));
+				c.setDisabledIcon(c.getIcon());
+				c.setEnabled(false);
+			}		
+			JOptionPane.showMessageDialog(frame, "You have lost.", "", JOptionPane.WARNING_MESSAGE);	
+		}
+		else
+		{
+			timer.stop();
+			for(CoordButton c:tiles)
+			{
+				int[] xy=c.getXY();
+				Location L=board.self()[xy[0]][xy[1]];
+				if(L.isFlagged())
+					c.setIcon(new ImageIcon("src/pside/tileflag.png"));
+				c.setDisabledIcon(c.getIcon());
+				c.setEnabled(false);
+			}
+			JOptionPane.showMessageDialog(frame, "You have won!","",JOptionPane.INFORMATION_MESSAGE);
+		}
+	}
 }

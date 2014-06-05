@@ -1,11 +1,14 @@
 package cside;
 
+import java.util.ArrayList;
+
 public class Board {
 private Location[][] self;
-private int numRow, numCol;
+private int numRow, numCol, won=2, numMines;
 	public Board(int x, int y, int numMines) {
 		numRow=x;
 		numCol=y;
+		this.numMines=numMines;
 		self=new Location[numRow][numCol];
 		//Populate the board with locations
 		for(int i=0;i<numRow;i++)
@@ -76,6 +79,47 @@ private int numRow, numCol;
 	public int getNumCols() {
 		return numCol;
 	}
+	
+	public int getNumMines() {
+		return numMines;
+	}
+	
+	public int isWon() {
+		if(flaggedLocs().size()==numMines)
+			for(Location L:flaggedLocs())
+				if(!L.isMined())
+				{
+					won=2;
+					return won;
+				}
+				else
+					won=1;
+		if(won==1)
+			return won;
+		else
+		for(Location L:minedLocs())
+			if(L.isClicked())
+				won=0;
+		return won;
+	}
+	
+	public ArrayList<Location> flaggedLocs() {
+		ArrayList<Location> list = new ArrayList<Location>();
+		for(Location[] L:self)
+			for(Location l:L)
+				if(l.isFlagged())
+					list.add(l);
+		return list;
+	}
+	
+	private ArrayList<Location> minedLocs() {
+		ArrayList<Location> list = new ArrayList<Location>();
+		for(Location[] L:self)
+			for(Location l:L)
+				if(l.isMined())
+					list.add(l);
+		return list;
+	}
 
 	public void dig(int[] xy) {
 		Location loc = self[xy[0]][xy[1]];
@@ -85,6 +129,7 @@ private int numRow, numCol;
 				for(Location l : L)
 					if(l.isMined())
 						l.click();
+			won=0;
 			return;
 		}
 		else if(!loc.isClicked())

@@ -3,6 +3,7 @@ package cside;
 import javax.swing.Icon;
 import javax.swing.JButton;
 
+@SuppressWarnings("serial")
 public class CoordButton extends JButton {
 	
 	private int[] coords;
