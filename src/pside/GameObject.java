@@ -3,6 +3,7 @@ package pside;
 import cside.Board;
 import cside.CoordButton;
 import cside.Location;
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
@@ -13,10 +14,13 @@ import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+
 import javax.swing.*;
 
 @SuppressWarnings("serial")
-public class GUI_main extends JFrame implements ActionListener, MouseListener{
+public class GameObject extends JFrame implements ActionListener, MouseListener{
 	//General variables
 	private final int tileside=20;
 	
@@ -37,9 +41,10 @@ public class GUI_main extends JFrame implements ActionListener, MouseListener{
 	private Board board;
 	private Timer timer;
 	private Object eSource;
-	//private Scanner scan=new Scanner(new File("src/cside/scores.txt"))
+	private Scanner scan;
+	private ArrayList<Integer> list;
 	
-	public GUI_main(Board dmz) {
+	public GameObject(Board dmz) {
 		board=dmz;
 		//initialize the frame
 		setTitle("Minesweeper by Andrew Hild");
@@ -63,7 +68,18 @@ public class GUI_main extends JFrame implements ActionListener, MouseListener{
 		data.add(mines, BorderLayout.EAST);
 		//data.add(new JLabel("Time elapsed and mines remaining data to go here"));
 		timer=new Timer(1000,this);
-		
+		try {
+		scan=new Scanner(new File("src/cside/scores.txt")).useDelimiter("\\s");
+		list=new ArrayList<Integer>();
+		while(scan.hasNextInt())
+			list.add(scan.nextInt());
+		}
+		catch (FileNotFoundException fnfe) {
+			list=new ArrayList<Integer>();
+			while(list.size()<3)
+				list.add(new Integer(-1));
+			JOptionPane.showMessageDialog(this, "Error: scores file not found.","System:",JOptionPane.ERROR_MESSAGE);
+		}
 		//Pack the frame
 		this.getContentPane().add(data, BorderLayout.CENTER);
 		this.getContentPane().add(field, BorderLayout.PAGE_END);
@@ -154,7 +170,11 @@ public class GUI_main extends JFrame implements ActionListener, MouseListener{
 			*/
 			else if(source==hiscore)
 			{
-				
+				String hiscores="High Scores:\nBeginner: ";
+				hiscores+=list.get(0).toString()+"\n\n";
+				hiscores+="Intermediate: "+list.get(1).toString()+"\n\n";
+				hiscores+="Advanced: "+list.get(2).toString();
+				JOptionPane.showMessageDialog(this, hiscores, "High scores", JOptionPane.PLAIN_MESSAGE);
 			}
 			else if(source==exit)
 				this.dispose();
@@ -194,8 +214,8 @@ public class GUI_main extends JFrame implements ActionListener, MouseListener{
 					else 
 						c.setIcon(new ImageIcon("src/pside/tileclicked.png"));
 				}
-					else if(board.self()[xy[0]][xy[1]].isFlagged())
-						c.setIcon(new ImageIcon("src/pside/tileflag.png"));	
+				if(board.self()[xy[0]][xy[1]].isFlagged())
+					c.setIcon(new ImageIcon("src/pside/tileflag.png"));	
 			}
 			mines.setText("Mines:\n"+(board.getNumMines()-board.flaggedLocs().size()));
 		}
@@ -217,7 +237,6 @@ public class GUI_main extends JFrame implements ActionListener, MouseListener{
 				c.setDisabledIcon(c.getIcon());
 				c.setEnabled(false);
 			}		
-			//JOptionPane.showMessageDialog(frame, "You have lost.", "", JOptionPane.WARNING_MESSAGE);	
 		}
 		else
 		{
@@ -232,6 +251,29 @@ public class GUI_main extends JFrame implements ActionListener, MouseListener{
 				c.setEnabled(false);
 			}
 			JOptionPane.showMessageDialog(this, "You have won!","",JOptionPane.INFORMATION_MESSAGE);
+			int index = 0;
+			if(board.getNumMines()==40)
+				index=1;
+			else if(board.getNumMines()==99)
+				index=2;
+			if(seconds<list.get(index))
+			{
+				JOptionPane.showMessageDialog(this, "You set a new high score for this level!","",JOptionPane.INFORMATION_MESSAGE);
+				File scores=new File("src/cside/scores.txt");
+				list.set(index, new Integer(seconds));
+				try{
+				PrintWriter print = new PrintWriter(scores);
+				for(Integer i:list)
+					print.write(""+i.toString()+" ");
+				print.close();
+				}
+				catch(FileNotFoundException fnfe) {
+					
+				}
+				finally {
+					//print.close();
+				}
+			}
 		}
 	}
 	
@@ -318,6 +360,8 @@ public class GUI_main extends JFrame implements ActionListener, MouseListener{
 				if(e.getButton()==3)
 				{
 					board.self()[xy[0]][xy[1]].flag();
+					if(!board.self()[xy[0]][xy[1]].isFlagged())
+						((JButton) source).setIcon(new ImageIcon("src/pside/tile.png"));
 					update();
 				}
 				else
