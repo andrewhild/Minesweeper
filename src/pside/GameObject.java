@@ -226,12 +226,12 @@ public class GameObject extends JFrame implements ActionListener, MouseListener{
 			{
 				int[] xy=c.getXY();
 				Location L=board.self()[xy[0]][xy[1]];
-				if(L.isFlagged()&&!L.isMined())
-					c.setIcon(new ImageIcon("src/pside/tilebadflag.png"));
 				if(L.isMined())
 					c.setIcon(new ImageIcon("src/pside/tilemine.png"));
 				if(board.self()[xy[0]][xy[1]].isFlagged())
 					c.setIcon(new ImageIcon("src/pside/tileflag.png"));
+				if(L.isFlagged()&&!L.isMined())
+					c.setIcon(new ImageIcon("src/pside/tilebadflag.png"));
 				if(c==eSource)
 					c.setIcon(new ImageIcon("src/pside/tileexplode.png"));
 				c.setDisabledIcon(c.getIcon());
