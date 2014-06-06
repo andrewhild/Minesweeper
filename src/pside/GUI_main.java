@@ -1,112 +1,77 @@
 package pside;
+
 import cside.Board;
 import cside.CoordButton;
 import cside.Location;
-
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
+import java.util.Scanner;
+import java.io.File;
 import javax.swing.*;
 
-public class GUI_main implements ActionListener {
+@SuppressWarnings("serial")
+public class GUI_main extends JFrame implements ActionListener, MouseListener{
 	//General variables
-	private final int tileside=21;
+	private final int tileside=20;
 	
 	//Graphics objects
-	private JFrame frame;
-	private JPanel menu,data,field;
+	private JPanel data,field;
 	private JLabel mines, time;
 	private int seconds=0;
 	private GridLayout minefield;
-	private ArrayList<CoordButton> tiles = new ArrayList<CoordButton>();
+	private ArrayList<CoordButton> tiles;
+	
+	//Menu objects
+	private JMenuBar menu;
+	private JMenu game,help;
+	private JMenuItem newgame,hiscore,exit,about,howto;
+	private JRadioButtonMenuItem beginner, intermediate, advanced;
 	
 	//Game objects
 	private Board board;
 	private Timer timer;
 	private Object eSource;
+	//private Scanner scan=new Scanner(new File("src/cside/scores.txt"))
 	
 	public GUI_main(Board dmz) {
 		board=dmz;
 		//initialize the frame
-		frame=new JFrame("Minesweeper by Andrew Hild");
-		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		frame.setPreferredSize(new Dimension(tileside*board.getNumRows()+10, tileside*board.getNumCols()+90));
-		frame.setResizable(false);
+		setTitle("Minesweeper by Andrew Hild");
+		ImageIcon i = new ImageIcon("src/pside/tileexplode.png");
+		setIconImage(i.getImage());
+		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		setResizable(false);
 		
 		//initialize the mine field
 		minefield=new GridLayout(board.getNumRows(),board.getNumCols());
 		field=new JPanel();
-		field.setPreferredSize(new Dimension(tileside*board.getNumRows(), tileside*board.getNumCols()));
 		field.setLayout(minefield);
-		
-		//Initialize the mine buttons themselves
-		int r=0;
-		int c=0;
-		for(int q=0; q<(board.getNumRows()*board.getNumCols());q++)
-		{
-			if((q%(board.getNumCols())==0)&&q!=0) {
-				r++;
-				c=0;
-			}
-			CoordButton b = new CoordButton(new ImageIcon("src/pside/tile.png"),new int[] {r,c});
-			b.addMouseListener(new MouseAdapter() {
-				public void mouseClicked(MouseEvent e) {
-					//System.out.println("You used mouse button "+e.getButton());
-					if(e.getComponent() instanceof CoordButton)
-					{
-						Object source=e.getComponent();
-						if(((CoordButton)(source)).isEnabled())
-						{
-							int[] xy=((CoordButton)(source)).getXY();
-							if(e.getButton()==3)
-							{
-								board.self()[xy[0]][xy[1]].flag();
-								update();
-							}
-							else
-							{
-								board.dig(xy);
-								update();
-							}
-						}
-					}
-				}
-			});
-			b.addActionListener(this);
-			tiles.add(b);
-			c++;
-		}
-		for(CoordButton button:tiles) {
-			field.add(button);
-		}
+		configure();
 		
 		//Initialize game state informing objects
-		menu=new JPanel();
-		menu.add(new JLabel("Menu to go here"));
 		data=new JPanel();
+		data.setLayout(new BorderLayout());
 		mines=new JLabel("Mines:\n"+board.getNumMines());
 		time=new JLabel("Time:\n"+seconds);
-		data.add(time, BoxLayout.X_AXIS);
-		data.add(mines, BoxLayout.Y_AXIS);
+		data.add(time, BorderLayout.WEST);
+		data.add(mines, BorderLayout.EAST);
 		//data.add(new JLabel("Time elapsed and mines remaining data to go here"));
 		timer=new Timer(1000,this);
 		
 		//Pack the frame
-		frame.getContentPane().add(menu, BorderLayout.PAGE_START);
-		frame.getContentPane().add(data, BorderLayout.CENTER);
-		frame.getContentPane().add(field, BorderLayout.PAGE_END);
-	}
-	
-	public void show() {
-		frame.pack();
-		frame.setVisible(true);
+		this.getContentPane().add(data, BorderLayout.CENTER);
+		this.getContentPane().add(field, BorderLayout.PAGE_END);
+		this.setJMenuBar(getMenu());
+		this.pack();
 	}
 
+	//Processes output for field buttons, menu buttons, and the timer
 	public void actionPerformed(ActionEvent event) {
 		Object source = event.getSource();
 		if(source instanceof CoordButton)
@@ -119,12 +84,101 @@ public class GUI_main implements ActionListener {
 		else if(source==timer)
 		{
 			seconds++;
-			time.setText("Time elapsed:\n"+seconds);
-			//frame.validate();
+			time.setText("Time:\n"+seconds);
+		}
+		else if(source instanceof JMenuItem)
+		{
+			if(source==newgame)
+			{
+				timer.stop();
+				seconds=0;
+				time.setText("Time:\n" + seconds);
+				board = new Board(board.getNumRows(),board.getNumCols(),board.getNumMines());
+				mines.setText("Mines:\n"+board.getNumMines());
+				configure();
+				validate();
+			}
+			else if(source==beginner)
+			{
+				if(!timer.isRunning())
+				{
+				intermediate.setSelected(false);
+				advanced.setSelected(false);
+				board=new Board(9,9,10);
+				minefield=new GridLayout(board.getNumRows(),board.getNumCols());
+				field.setLayout(minefield);
+				actionPerformed(new ActionEvent(newgame,ActionEvent.ACTION_PERFORMED,null));
+				pack();
+				}
+			}
+			else if(source==intermediate)
+			{
+				if(!timer.isRunning())
+				{
+				beginner.setSelected(false);
+				advanced.setSelected(false);
+				board=new Board(16,16,40);
+				minefield=new GridLayout(board.getNumRows(),board.getNumCols());
+				field.setLayout(minefield);
+				actionPerformed(new ActionEvent(newgame,ActionEvent.ACTION_PERFORMED,null));
+				pack();
+				}
+			}
+			else if(source==advanced)
+			{
+				if(!timer.isRunning())
+				{
+				beginner.setSelected(false);
+				intermediate.setSelected(false);
+				board=new Board(16,30,99);
+				minefield=new GridLayout(board.getNumRows(),board.getNumCols());
+				field.setLayout(minefield);
+				actionPerformed(new ActionEvent(newgame,ActionEvent.ACTION_PERFORMED,null));
+				pack();
+				}
+			}
+			/* To be included in a future release
+			else if(source==custom)
+			{
+				if(!timer.isRunning())
+				{
+				JOptionPane.showInputDialog(this);
+				minefield=new GridLayout(board.getNumRows(),board.getNumCols());
+				//field.setPreferredSize(new Dimension(tileside*board.getNumRows(), tileside*board.getNumCols()));
+				field.setLayout(minefield);
+				actionPerformed(new ActionEvent(newgame,ActionEvent.ACTION_PERFORMED,null));
+				pack();
+				}
+			
+			}
+			*/
+			else if(source==hiscore)
+			{
+				
+			}
+			else if(source==exit)
+				this.dispose();
+			else if(source==howto)
+			{
+			String helptext = "How to play Minesweeper:\n";
+			helptext+="1. Click a square. It will reveal the number of mines adjacent to that square\n";
+			helptext+="2. Don't click a mine! If you click one, you lose instantly.\n";
+			helptext+="3. If you determine a square is a mine, right click to flag it.\n";
+			helptext+="4. You win once all the mined squares are correctly flagged.\n";
+			helptext+="5. The clock is running! Try to beat your best time at each of the three difficulties.\n";
+			helptext+="6. To access options, use the \"Game\" menu. Good luck!";
+			JOptionPane.showMessageDialog(this, helptext, "How to play:",JOptionPane.PLAIN_MESSAGE);
+			}
+			else if(source==about)
+			{
+				String aboutgame="Minesweeper v1.0\n";
+				aboutgame+="by Andrew Hild, 06/05/2014";
+				JOptionPane.showMessageDialog(this,aboutgame,"About",JOptionPane.PLAIN_MESSAGE);
+			}
 		}
 	}
 	
-	public void update() {
+	private void update() {
 		int won=board.isWon();
 		if(won==2)
 		{
@@ -132,33 +186,18 @@ public class GUI_main implements ActionListener {
 			{
 				int[] xy=c.getXY();
 				if(board.self()[xy[0]][xy[1]].isClicked())
-					if(board.self()[xy[0]][xy[1]].isMined()){
-						if(c==eSource)
-							c.setIcon(new ImageIcon("src/pside/tileexplode.png"));
-						else
-						{
-							ImageIcon i= new ImageIcon("src/pside/tilemine.png");
-							c.setIcon(i);
-						}
-					}
-
-					else if(board.self()[xy[0]][xy[1]].getMines()>0){
+				{
+					if(board.self()[xy[0]][xy[1]].getMines()>0){
 						ImageIcon i = new ImageIcon("src/pside/tile"+board.self()[xy[0]][xy[1]].getMines()+".png");
 						c.setIcon(i);
 					}
-
-					else {
-						ImageIcon i= new ImageIcon("src/pside/tileclicked.png");
-						c.setIcon(i);
-					}
-			
-				else if(board.self()[xy[0]][xy[1]].isFlagged())
-				{
-					ImageIcon i= new ImageIcon("src/pside/tileflag.png");
-					c.setIcon(i);
+					else 
+						c.setIcon(new ImageIcon("src/pside/tileclicked.png"));
 				}
+					else if(board.self()[xy[0]][xy[1]].isFlagged())
+						c.setIcon(new ImageIcon("src/pside/tileflag.png"));	
 			}
-			mines.setText("Remaining mines:\n"+(board.getNumMines()-board.flaggedLocs().size()));
+			mines.setText("Mines:\n"+(board.getNumMines()-board.flaggedLocs().size()));
 		}
 		else if(won==0)
 		{
@@ -171,12 +210,14 @@ public class GUI_main implements ActionListener {
 					c.setIcon(new ImageIcon("src/pside/tilebadflag.png"));
 				if(L.isMined())
 					c.setIcon(new ImageIcon("src/pside/tilemine.png"));
+				if(board.self()[xy[0]][xy[1]].isFlagged())
+					c.setIcon(new ImageIcon("src/pside/tileflag.png"));
 				if(c==eSource)
 					c.setIcon(new ImageIcon("src/pside/tileexplode.png"));
 				c.setDisabledIcon(c.getIcon());
 				c.setEnabled(false);
 			}		
-			JOptionPane.showMessageDialog(frame, "You have lost.", "", JOptionPane.WARNING_MESSAGE);	
+			//JOptionPane.showMessageDialog(frame, "You have lost.", "", JOptionPane.WARNING_MESSAGE);	
 		}
 		else
 		{
@@ -190,7 +231,126 @@ public class GUI_main implements ActionListener {
 				c.setDisabledIcon(c.getIcon());
 				c.setEnabled(false);
 			}
-			JOptionPane.showMessageDialog(frame, "You have won!","",JOptionPane.INFORMATION_MESSAGE);
+			JOptionPane.showMessageDialog(this, "You have won!","",JOptionPane.INFORMATION_MESSAGE);
 		}
+	}
+	
+	private void configure() {
+		//Initialize the mine buttons themselves
+				int r=0;
+				int c=0;
+				tiles = new ArrayList<CoordButton>();
+				field.removeAll();
+				for(int q=0; q<(board.getNumRows()*board.getNumCols());q++)
+				{
+					if((q%(board.getNumCols())==0)&&q!=0) {
+						r++;
+						c=0;
+					}
+					CoordButton b = new CoordButton(new ImageIcon("src/pside/tile.png"),new int[] {r,c});
+					b.addMouseListener(this);
+					b.addActionListener(this);
+					b.setPreferredSize(new Dimension(tileside+1,tileside+1));
+					tiles.add(b);
+					c++;
+				}
+				for(CoordButton button:tiles) {
+					field.add(button);
+				}
+	}
+	
+	//Constructs the menu bar to keep all of this out of the constructor
+	private JMenuBar getMenu() {
+		//initialize the menu and add it to the frame
+				menu=new JMenuBar();
+				//set up the game menu
+				game=new JMenu("Game");
+				newgame=new JMenuItem("New game");
+				newgame.addActionListener(this);
+				//custom=new JMenuItem("Custom...");
+				//custom.addActionListener(this);
+				beginner=new JRadioButtonMenuItem("Beginner");
+				beginner.setSelected(true);
+				beginner.addActionListener(this);
+				intermediate=new JRadioButtonMenuItem("Intermediate");
+				intermediate.setSelected(false);
+				intermediate.addActionListener(this);
+				advanced=new JRadioButtonMenuItem("Advanced");
+				advanced.setSelected(false);
+				advanced.addActionListener(this);
+				hiscore=new JMenuItem("High scores");
+				hiscore.addActionListener(this);
+				exit=new JMenuItem("Exit");
+				exit.addActionListener(this);
+				game.add(newgame);
+				game.addSeparator();
+				game.add(beginner);
+				game.add(intermediate);
+				game.add(advanced);
+				//game.add(custom);
+				game.addSeparator();
+				game.add(hiscore);
+				game.addSeparator();
+				game.add(exit);
+				//set up the help menu
+				help=new JMenu("Help");
+				howto=new JMenuItem("How to play");
+				howto.addActionListener(this);
+				about=new JMenuItem("About Minesweeper");
+				about.addActionListener(this);
+				help.add(howto);
+				help.add(about);
+				//set up menu
+				menu.add(game);
+				menu.add(help);
+				return menu;
+	}
+
+	@Override
+	public void mouseClicked(MouseEvent e) {
+		//System.out.println("You used mouse button "+e.getButton());
+		if(e.getComponent() instanceof CoordButton)
+		{
+			Object source=e.getComponent();
+			if(((CoordButton)(source)).isEnabled())
+			{
+				int[] xy=((CoordButton)(source)).getXY();
+				if(e.getButton()==3)
+				{
+					board.self()[xy[0]][xy[1]].flag();
+					update();
+				}
+				else
+				{
+					board.dig(xy);
+					update();
+				}
+			}
+		}
+		
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
 	}
 }
